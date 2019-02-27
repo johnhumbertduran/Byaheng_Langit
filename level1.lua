@@ -11,6 +11,8 @@ local scene = storyboard.newScene()
 local physics = require "physics"
 physics.start(); physics.pause()
 
+-- local coins = require ("coins")
+-- coin_triang = display.newGroup()
 
 
 --------------------------------------------
@@ -112,6 +114,9 @@ function scene:createScene( event )
 
 	-- instance:scale(.8,.8)
 	instance:play()
+	-- payerCollisionRect = display.newRect(instance.x,instance.y, 20,75)
+	-- -- payerCollisionRect.x = instance.x
+	-- -- payerCollisionRect.y = instance.y
 
 
 	local holesheet = graphics.newImageSheet("im/hole_sprite.png", { width = 53, height =123, numFrames = 3} )
@@ -128,7 +133,21 @@ function scene:createScene( event )
 	hole:scale(.5,.5)
 	hole:play()
 
-	-- physics.setDrawMode("hybrid")
+
+	coin = display.newImageRect("im/coin.png", 30, 30)
+	coin.x = 300
+	coin.y = 80
+	coin.ngaean = "coin"
+	physics.addBody( coin, "static", { density=1.2, friction=0, bounce=0 } )
+
+	coin2 = display.newImageRect("im/coin.png", 25, 25)
+	coin2.x = 350
+	coin2.y = 40
+	coin2.ngaean = "coin2"
+	physics.addBody( coin2, "static", { density=1.2, friction=0, bounce=0 } )
+
+
+	physics.setDrawMode("hybrid")
 	physics.setGravity( 0, 17 )
 	
 	-- all display objects must be inserted into group
@@ -139,7 +158,11 @@ function scene:createScene( event )
 	-- group:insert( grass)
 	-- group:insert( crate )
 	group:insert( instance )
+	-- group:insert( payerCollisionRect )
 	group:insert( hole )
+	group:insert(ws)
+	group:insert( coin )
+	group:insert( coin2 )
 end
 
 -- Called immediately after scene has moved onscreen:
@@ -154,12 +177,14 @@ function scene:enterScene( event )
 
 		if (event.phase == beg) then
 
-			if instance.y <= 206 then
+			if (instance.y <= 206) then
 
 				-- instance:play()
 			else
 				instance:pause()
 		instance:applyLinearImpulse( 0, -130, instance.x, instance.y )
+		-- payerCollisionRect:applyLinearImpulse( 0, -130, payerCollisionRect.x, payerCollisionRect.y )
+
 
 			end
 		end
@@ -169,10 +194,11 @@ function scene:enterScene( event )
 
 	Runtime:addEventListener("touch", jump)
 
+
 	-- ##################__________check if naka tugpa eon maw sa ground clouds__________##################
 	function checkGround()
 
-		print(instance.y)
+		-- print(instance.y)
 		if instance.y >= 202 then
 			instance:play()
 		end
@@ -249,6 +275,62 @@ function scene:enterScene( event )
 	Runtime:addEventListener("enterFrame", holeX)
 
 
+	function singleCoin()
+
+		coinRandPos = math.random(450,1500)
+		-- coinRanX = math.random(250,600)
+		coinRanY = math.random(30,200)
+
+		coin.x = coin.x - 7
+		
+		if (coin.x <= -10) then
+			coin.x = coinRandPos * 2
+			coin.y = coinRanY
+			print("coin")
+		end
+		
+	end
+	
+	Runtime:addEventListener("enterFrame", singleCoin)
+
+	function singleCoin2()
+
+		coin2RandPos2 = math.random(550,2000)
+		-- coinRanX = math.random(250,600)
+		coin2RanY2 = math.random(40,150)
+
+		coin2.x = coin2.x - 7
+		
+		if (coin2.x <= -10) then
+			coin2.x = coin2RandPos2 * 2
+			coin2.y = coin2RanY2
+			print("coin2")
+		end
+		
+	end
+	
+	Runtime:addEventListener("enterFrame", singleCoin2)
+
+	-- function coin1()
+
+	-- 	coinRandPos = math.random(450,1500)
+	-- 	coinRandNeg = math.random(0,500)
+
+	-- 	coin_triang.x = coin_triang.x - 7
+	-- 	zer = (display.contentWidth / 2) - (display.contentWidth / 2)
+		
+	-- 	if (coin_triang.x <= -700) then
+    --     -- physics.addBody( coin[i], "static", { density=1.2, friction=0, bounce=0} )
+
+	-- 		coin_triang.x = coinRandPos * 5
+	-- 		-- print("hole")
+	-- 	end
+		
+	-- end
+	
+	-- Runtime:addEventListener("enterFrame", coin1)
+
+
 	function bunggo(event)
 
 
@@ -259,6 +341,8 @@ function scene:enterScene( event )
 			
 			hayhay = event.object1
 			hoyhoy = event.object2
+			-- coin = event.object2
+			-- coin2 = event.object2
 
 			if ((hayhay.ngaean == "player" and hoyhoy.ngaean == "buho") or
 				(hayhay.ngaean == "buho" and hoyhoy.ngaean == "player") )
@@ -271,11 +355,16 @@ function scene:enterScene( event )
 
 				display.remove( hayhay )
 				display.remove( hoyhoy )
+				-- display.remove( payerCollisionRect )
 				Runtime:removeEventListener("enterFrame", gbAnim)
 				Runtime:removeEventListener("enterFrame", animateGrcl)
 				Runtime:removeEventListener("enterFrame", checkGround)
 				Runtime:removeEventListener("enterFrame", holeX)
 				Runtime:removeEventListener("touch", jump)
+				Runtime:removeEventListener("enterFrame", coin1)
+				Runtime:removeEventListener("enterFrame", singleCoin)
+				Runtime:removeEventListener("enterFrame", singleCoin2)
+
 
 			-- function gameOver()
 			function scaleUp()
@@ -294,13 +383,59 @@ function scene:enterScene( event )
 			-- gameOver()
 
 			end
+			
+			
+			-- if ((hayhay.ngaean == "player" and coin.ngaean == "coin") or
+			-- 	(hayhay.ngaean == "coin" and coin.ngaean == "player") )
+			-- then
 
+			-- 	display.remove( coin )
+
+			-- end
+
+			-- if (payerCollisionRect.x > coin_triang.numChildren.x) then
+
+			-- 	display.remove(coin[i])
+
+			-- end
 
 		end
+
+
 
 	end
 
 	Runtime:addEventListener( "collision", bunggo )
+	
+	
+	
+	-- function bunggoCoin1(event)
+
+
+	-- 	phase = event.phase
+
+
+	-- 	if (phase == beg) then
+			
+	-- 		play = event.object1
+	-- 		coin = event.object2
+			
+			
+	-- 		if ((play.ngaean == "player" and coin.ngaean == "coin") or
+	-- 			(play.ngaean == "coin" and coin.ngaean == "player") )
+	-- 		then
+
+	-- 			display.remove( coin )
+
+	-- 		end
+
+	-- 	end
+
+
+
+	-- end
+
+	-- Runtime:addEventListener( "collision", bunggoCoin1 )
 
 
 	group:insert(bg1)
@@ -310,8 +445,11 @@ function scene:enterScene( event )
 	-- group:insert( grass)
 	-- group:insert( crate )
 	group:insert(instance)
+	-- group:insert(payerCollisionRect)
 	group:insert(hole)
 	group:insert(ws)
+	group:insert( coin )
+	group:insert( coin2 )
 	
 end
 
