@@ -1,21 +1,40 @@
------------------------------------------------------------------------------------------
---
--- level1.lua
---
------------------------------------------------------------------------------------------
 
 local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
-
--- include Corona's "physics" library
+local settings = require( "lib.settings" ) -- settings
+local util     = require( "lib.util" ) -- util
 local physics = require "physics"
-physics.start(); physics.pause()
-
--- local coins = require ("coins")
--- coin_triang = display.newGroup()
-
-
+-- physics.start();
+-- physics.pause()
+local widget = require( "widget" )
+local coinTable1 = {}
+local score = 0
+local scoreText
+local currentLevel = settings.currentLevel
 --------------------------------------------
+
+function buttonHit(event)
+	settings.currentLevel = currentLevel+1
+	util.save(settings, "settings.json")
+	storyboard.removeScene( "level1" )
+	storyboard.purgeScene( "lvls" )
+	storyboard.gotoScene (  "lvls", {effect = "slideUp"} )
+   
+	--return true
+end
+
+local function unlockLevel()
+	i = tonumber(currentLevel)
+
+	if(currentLevel <= 1) then
+	  settings.levels[i] = 3
+	  settings.levels[i+1] = 1
+	  print( i )
+  util.save(settings, "settings.json")
+  buttonHit()
+	end
+
+  end
 
 -- forward declarations and other locals
 local screenW, screenH, halfW = display.contentWidth, display.contentHeight, display.contentWidth*0.5
@@ -31,10 +50,14 @@ local screenW, screenH, halfW = display.contentWidth, display.contentHeight, dis
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
 	local group = self.view
+	physics.start()
 
 	beg = "began"
 
-	-- create a grey rectangle as the backdrop
+	scoreText = display.newText("0", display.contentWidth / 2, 20, "verdana", 35)
+	scoreText.x = display.contentWidth / 2
+	scoreText.y = 20
+	
 	bg1 = display.newImageRect( "im/lvl1_bg.jpg", 480, 320 )
 	bg1.x = 240
 	bg1.y = 160
@@ -66,31 +89,6 @@ function scene:createScene( event )
 	ws = display.newRect(240, 160, 480, 320)
 	ws:setFillColor(255)
 	ws.alpha = 0
-	
-	
-	-- pit = display.newImageRect( "im/pit.png", 85, 65 )
-	-- pit.x = 240
-	-- pit.y = 290
-	
-	
-	
-	-- -- make a crate (off-screen), position it, and rotate slightly
-	-- local crate = display.newImageRect( "crate.png", 90, 90 )
-	-- crate.x, crate.y = 160, -100
-	-- crate.rotation = 15
-	
-	-- -- add physics to the crate
-	-- physics.addBody( crate, { density=1.0, friction=0.3, bounce=0.3 } )
-	
-	-- -- create a grass object and add physics (with custom shape)
-	-- local grass = display.newImageRect( "grass.png", screenW, 82 )
-	-- grass.anchorX = 0
-	-- grass.anchorY = 1
-	-- grass.x, grass.y = 0, display.contentHeight
-	
-	-- -- define a shape that's slightly shorter than image bounds (set draw mode to "hybrid" or "debug" to see)
-	-- local grassShape = { -halfW,-34, halfW,-34, halfW,34, -halfW,34 }
-	-- physics.addBody( grass, "static", { friction=0.3, shape=grassShape } )
 
 	local playoptions =
 {
@@ -106,17 +104,13 @@ function scene:createScene( event )
 	instance = display.newSprite ( sheet, { name = "man", start = 1, count = 2, time = 800 } )
 	instance.x = 75
 	instance.y = 210
-	instance.ngaean = "player"
+	instance.objectType = "player"
 	physics.addBody( instance,
-	 { density=0.2, --[[ friction=0, ]] bounce=0, shape=playshape1 },
-	 { density=2.2, --[[ friction=0, ]] bounce=0, shape=playshape2 } 
+	 { density=0.2, friction=5, shape=playshape1 },
+	 { density=2.2, friction=5, shape=playshape2 } 
 	)
 
-	-- instance:scale(.8,.8)
 	instance:play()
-	-- payerCollisionRect = display.newRect(instance.x,instance.y, 20,75)
-	-- -- payerCollisionRect.x = instance.x
-	-- -- payerCollisionRect.y = instance.y
 
 
 	local holesheet = graphics.newImageSheet("im/hole_sprite.png", { width = 53, height =123, numFrames = 3} )
@@ -125,7 +119,7 @@ function scene:createScene( event )
 	hole = display.newSprite ( holesheet, { name = "hole", start = 1, count = 3, time = 800 } )
 	hole.x = 375
 	hole.y = 230
-	hole.ngaean = "buho"
+	hole.objectType = "buho"
 	-- local holeShape = { 5,-30, 12,-9, 13,4, 10,20, 5,30, -5,30, -10,20, -12,0 }
 	local holeShape = { 5,-30, 13,-9, 13,10, 5,31, -5,31, -13,10, -13,-9, -5,-30 }
 	physics.addBody( hole, "static", { density=1.2, friction=0, bounce=0, shape=holeShape } )
@@ -133,36 +127,26 @@ function scene:createScene( event )
 	hole:scale(.5,.5)
 	hole:play()
 
-
-	coin = display.newImageRect("im/coin.png", 30, 30)
-	coin.x = 300
-	coin.y = 80
-	coin.ngaean = "coin"
-	physics.addBody( coin, "static", { density=1.2, friction=0, bounce=0 } )
-
-	coin2 = display.newImageRect("im/coin.png", 25, 25)
-	coin2.x = 350
-	coin2.y = 40
-	coin2.ngaean = "coin2"
-	physics.addBody( coin2, "static", { density=1.2, friction=0, bounce=0 } )
+	gate1 = display.newImageRect("im/gate1.png", 198, 221)
+	gate1.x = 2000
+	gate1.y = display.contentHeight / 2
+	gate1.objectType = "gate1"
+	physics.addBody( gate1, "static", { density=1.2, friction=0, bounce=0 } )
 
 
-	physics.setDrawMode("hybrid")
+	-- physics.setDrawMode("hybrid")
 	physics.setGravity( 0, 17 )
 	
-	-- all display objects must be inserted into group
-	group:insert( bg1 )
-	group:insert( bg2 )
-	group:insert( grcl1 )
-	group:insert( grcl2 )
-	-- group:insert( grass)
-	-- group:insert( crate )
-	group:insert( instance )
-	-- group:insert( payerCollisionRect )
-	group:insert( hole )
+	group:insert(bg1)
+	group:insert(bg2)
+	group:insert(grcl1)
+	group:insert(grcl2)
+	group:insert(hole)
 	group:insert(ws)
-	group:insert( coin )
-	group:insert( coin2 )
+	group:insert(gate1)
+	group:insert(instance)
+	group:insert(go)
+	group:insert(scoreText)
 end
 
 -- Called immediately after scene has moved onscreen:
@@ -215,12 +199,12 @@ function scene:enterScene( event )
 		
 		if (bg1.x < -240) then
 			bg1.x = bg2.x + bg1.width
-			print("bg1")
+			-- print("bg1")
 		end
 		
 		if (bg2.x < -240) then
 			bg2.x = bg1.x + bg2.width
-			print("bg2")
+			-- print("bg2")
 		end
 	end
 	
@@ -234,28 +218,17 @@ function scene:enterScene( event )
 		
 		if (grcl1.x < -240) then
 			grcl1.x = grcl2.x + grcl1.width
-			print("grcl1")
+			-- print("grcl1")
 		end
 		
 		if (grcl2.x < -240) then
 			grcl2.x = grcl1.x + grcl2.width
-			print("grcl2")
+			-- print("grcl2")
 		end
 	end
 	
 	Runtime:addEventListener("enterFrame", animateGrcl)
 
-
-	-- local function pitX()
-	-- 	pit.x = pit.x - 10
-		
-	-- 	if (pit.x < -240) then
-	-- 		pit.x = 100 * 5
-	-- 		print("pit")
-	-- 	end
-	-- end
-	
-	-- Runtime:addEventListener("enterFrame", pitX)
 	
 	-- ##################__________Animate holes kara__________##################
 	function holeX()
@@ -267,7 +240,7 @@ function scene:enterScene( event )
 		
 		if (hole.x <= -10) then
 			hole.x = holeRandPos * 2
-			print("hole")
+			-- print("hole")
 		end
 		
 	end
@@ -275,96 +248,124 @@ function scene:enterScene( event )
 	Runtime:addEventListener("enterFrame", holeX)
 
 
-	function singleCoin()
+	function gateDestination()
 
-		coinRandPos = math.random(450,1500)
-		-- coinRanX = math.random(250,600)
-		coinRanY = math.random(30,200)
-
-		coin.x = coin.x - 7
+		gate1.x = gate1.x - 7
 		
-		if (coin.x <= -10) then
-			coin.x = coinRandPos * 2
+	end
+	
+	Runtime:addEventListener("enterFrame", gateDestination)
+
+	function ubraCoin()
+
+		local coin = display.newImageRect("im/coin.png", 30, 30)
+		table.insert( coinTable1, coin )
+		physics.addBody( coin, "static", { isSensor=true } )
+		coin.isBullet = true
+		coin.objectType = "coin"
+		coin.x = -100
+		physics.alpha = 0
+
+
+		local coin2 = display.newImageRect("im/coin.png", 30, 30)
+		table.insert( coinTable1, coin2 )
+		physics.addBody( coin2, "static", { isSensor=true } )
+		coin2.isBullet = true
+		coin2.objectType = "coin2"
+		coin2.x = -100
+		physics.alpha = 0
+
+
+		local coin3 = display.newImageRect("im/coin.png", 30, 30)
+		table.insert( coinTable1, coin3 )
+		physics.addBody( coin3, "static", { isSensor=true } )
+		coin3.isBullet = true
+		coin3.objectType = "coin3"
+		coin3.x = -100
+		physics.alpha = 0
+
+		local saya = math.random( 3 )
+		coinRanY = math.random(50,90)
+		coinRanY2 = math.random(70,150)
+		coinRanX = math.random(1500,2500)
+
+		if ( saya == 1 ) then
+		
+			coin.x = 500
 			coin.y = coinRanY
-			print("coin")
-		end
-		
-	end
-	
-	Runtime:addEventListener("enterFrame", singleCoin)
+			transition.to( coin, { x=-140, time=coinRanX,
+			onComplete = function() display.remove( coin ) end
+		} )
+			-- coin:setLinearVelocity( math.random( 40,120 ), math.random( 20,60 ) )
+			coin.alpha = 1
 
-	function singleCoin2()
-
-		coin2RandPos2 = math.random(550,2000)
-		-- coinRanX = math.random(250,600)
-		coin2RanY2 = math.random(40,150)
-
-		coin2.x = coin2.x - 7
-		
-		if (coin2.x <= -10) then
-			coin2.x = coin2RandPos2 * 2
-			coin2.y = coin2RanY2
-			print("coin2")
-		end
-		
-	end
-	
-	Runtime:addEventListener("enterFrame", singleCoin2)
-
-	-- function coin1()
-
-	-- 	coinRandPos = math.random(450,1500)
-	-- 	coinRandNeg = math.random(0,500)
-
-	-- 	coin_triang.x = coin_triang.x - 7
-	-- 	zer = (display.contentWidth / 2) - (display.contentWidth / 2)
-		
-	-- 	if (coin_triang.x <= -700) then
-    --     -- physics.addBody( coin[i], "static", { density=1.2, friction=0, bounce=0} )
-
-	-- 		coin_triang.x = coinRandPos * 5
-	-- 		-- print("hole")
-	-- 	end
-		
-	-- end
-	
-	-- Runtime:addEventListener("enterFrame", coin1)
-
-
-	function bunggo(event)
-
-
-		phase = event.phase
-
-
-		if (phase == beg) then
+			print("coint1")
 			
-			hayhay = event.object1
-			hoyhoy = event.object2
-			-- coin = event.object2
-			-- coin2 = event.object2
+		elseif ( saya == 2 ) then
+			
+			coin2.x = 600
+			coin2.y = coinRanY2
+			transition.to( coin2, { x=-140, time=coinRanX,
+			onComplete = function() display.remove( coin2 ) end
+		} )
+			-- coin2:setLinearVelocity( math.random( -40,40 ), math.random( 40,120 ) )
+			coin2.alpha = 1
 
-			if ((hayhay.ngaean == "player" and hoyhoy.ngaean == "buho") or
-				(hayhay.ngaean == "buho" and hoyhoy.ngaean == "player") )
+			print("coint2")
+	
+		elseif ( saya == 3 ) then
+			
+			coin3.x = 490
+			coin3.y = coinRanY2
+			transition.to( coin3, { x=-140, time=coinRanX,
+			onComplete = function() display.remove( coin3 ) end
+		} )
+			-- coin3:setLinearVelocity( math.random( -120,-40 ), math.random( 20,60 ) )
+			coin3.alpha = 1
+
+			print("coint3")
+	
+		end
+
+	end
+
+	function coinLoop()
+		ubraCoin()
+	end
+	
+	coinLoopTimer = timer.performWithDelay( 500, coinLoop, 0 )
+
+	local function onCollision( event )
+
+		if ( event.phase == "began" ) then
+	
+			local obj1 = event.object1
+			local obj2 = event.object2
+	
+			if ( ( obj1.objectType == "player" and obj2.objectType == "buho" ) or
+				 ( obj1.objectType == "buho" and obj2.objectType == "player" ) )
 			then
-
+				
 				function ws2()
 					ws1 = transition.to( ws, {alpha = 0, time=250})
 				end
 				ws1 = transition.to( ws, {alpha = 1, time=0, onComplete=ws2})
 
-				display.remove( hayhay )
-				display.remove( hoyhoy )
-				-- display.remove( payerCollisionRect )
+				display.remove( obj1 )
+				display.remove( obj2 )
+				-- physics.stop()
+				-- stopTime = timer.cancel(coinLoop)
+				-- timer1 = timer.performWithDelay( 2000, listener )  -- wait 2 seconds
+ 
+				-- sometime later...
+				local result = timer.cancel( coinLoopTimer )
 				Runtime:removeEventListener("enterFrame", gbAnim)
 				Runtime:removeEventListener("enterFrame", animateGrcl)
 				Runtime:removeEventListener("enterFrame", checkGround)
 				Runtime:removeEventListener("enterFrame", holeX)
 				Runtime:removeEventListener("touch", jump)
-				Runtime:removeEventListener("enterFrame", coin1)
-				Runtime:removeEventListener("enterFrame", singleCoin)
-				Runtime:removeEventListener("enterFrame", singleCoin2)
-
+				Runtime:removeEventListener("enterFrame", gateDestination)
+				-- print("bunggo buho")
 
 			-- function gameOver()
 			function scaleUp()
@@ -376,80 +377,116 @@ function scene:enterScene( event )
 
 			gameOv1 = transition.to( go, { transition = easing.inExpo, x = display.contentWidth /2, alpha=1, time=1000, onComplete=scaleUp} )
 
-				-- go.alpha = 1
-				-- go.x = display.contentWidth /2
+	
+			elseif ( ( obj1.objectType == "player" and obj2.objectType == "coin" ) or
+					 ( obj1.objectType == "coin" and obj2.objectType == "player" ) )
+			then
+
+				display.remove( obj2 )
+				-- display.remove( obj2 )
+				for i = #coinTable1, 1, -1 do
+					if ( coinTable1[i] == obj1 or coinTable1[i] == obj2 ) then
+						table.remove( coinTable1, i)
+						score = score + 10
+						scoreText.text = score
+						print("bunggo Coin1")
+						break
+					end
+				end
 
 			-- end
-			-- gameOver()
+
+
+		elseif ( ( obj1.objectType == "player" and obj2.objectType == "coin2" ) or
+					 ( obj1.objectType == "coin2" and obj2.objectType == "player" ) )
+			then
+
+				display.remove( obj2 )
+				-- display.remove( obj2 )
+				for i = #coinTable1, 1, -1 do
+					if ( coinTable1[i] == obj1 or coinTable1[i] == obj2 ) then
+						table.remove( coinTable1, i)
+						score = score + 15
+						scoreText.text = score
+						print("bunggo Coin2")
+						break
+					end
+				end
+		
+		
+		elseif ( ( obj1.objectType == "player" and obj2.objectType == "coin3" ) or
+					 ( obj1.objectType == "coin3" and obj2.objectType == "player" ) )
+			then
+
+				display.remove( obj2 )
+				-- display.remove( obj2 )
+				for i = #coinTable1, 1, -1 do
+					if ( coinTable1[i] == obj1 or coinTable1[i] == obj2 ) then
+						table.remove( coinTable1, i)
+						score = score + 20
+						scoreText.text = score
+						print("bunggo Coin3")
+						break
+					end
+				end
+
+
+		elseif ( ( obj1.objectType == "player" and obj2.objectType == "gate1" ) or
+					 ( obj1.objectType == "gate1" and obj2.objectType == "player" ) )
+			then
+
+				function removePhysicsBody()
+				physics.removeBody(gate1)
+				physics.removeBody(instance)
+				end
+
+				removeBody = timer.performWithDelay(500, removePhysicsBody) 
+
+				-- display.remove( obj2 )
+				-- display.remove( obj2 )
+				-- instance:pause()
+				-- physics.addBody( instance, "static")
+				local result = timer.cancel( coinLoopTimer )
+				Runtime:removeEventListener("enterFrame", gbAnim)
+				Runtime:removeEventListener("enterFrame", animateGrcl)
+				Runtime:removeEventListener("enterFrame", checkGround)
+				Runtime:removeEventListener("enterFrame", holeX)
+				Runtime:removeEventListener("touch", jump)
+				Runtime:removeEventListener("enterFrame", gateDestination)
+
+
+				function enterRainbow()
+					enters = transition.to(gate1,{xScale=5, yScale=5, alpha=0, time=1000})
+				end
+				sakaGate1 = transition.to(instance,{x=200,y=150,alpha=0, time=1000, delay=500, onComplete=enterRainbow})
+
+
+				print("hep, Success!")
 
 			end
 			
-			
-			-- if ((hayhay.ngaean == "player" and coin.ngaean == "coin") or
-			-- 	(hayhay.ngaean == "coin" and coin.ngaean == "player") )
-			-- then
-
-			-- 	display.remove( coin )
-
-			-- end
-
-			-- if (payerCollisionRect.x > coin_triang.numChildren.x) then
-
-			-- 	display.remove(coin[i])
-
-			-- end
-
 		end
-
-
-
 	end
-
-	Runtime:addEventListener( "collision", bunggo )
 	
-	
-	
-	-- function bunggoCoin1(event)
+	Runtime:addEventListener( "collision", onCollision )	
 
-
-	-- 	phase = event.phase
-
-
-	-- 	if (phase == beg) then
-			
-	-- 		play = event.object1
-	-- 		coin = event.object2
-			
-			
-	-- 		if ((play.ngaean == "player" and coin.ngaean == "coin") or
-	-- 			(play.ngaean == "coin" and coin.ngaean == "player") )
-	-- 		then
-
-	-- 			display.remove( coin )
-
-	-- 		end
-
-	-- 	end
-
-
-
+	-- function clickGameOver()
+	-- 	unlockLevel()
 	-- end
 
-	-- Runtime:addEventListener( "collision", bunggoCoin1 )
+	-- go:addEventListener("tap", clickGameOver)
 
 
 	group:insert(bg1)
 	group:insert(bg2)
 	group:insert(grcl1)
 	group:insert(grcl2)
-	-- group:insert( grass)
-	-- group:insert( crate )
-	group:insert(instance)
-	-- group:insert(payerCollisionRect)
 	group:insert(hole)
 	group:insert(ws)
-	group:insert( coin )
-	group:insert( coin2 )
+	group:insert(gate1)
+	group:insert(instance)
+	group:insert(go)
+	group:insert(scoreText)
 	
 end
 
@@ -465,8 +502,8 @@ end
 function scene:destroyScene( event )
 	local group = self.view
 	
-	package.loaded[physics] = nil
-	physics = nil
+	-- package.loaded[physics] = nil
+	-- physics = nil
 end
 
 -----------------------------------------------------------------------------------------
