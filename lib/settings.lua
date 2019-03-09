@@ -18,6 +18,11 @@ if (not data) then
 						2, 2, 2, 
 						2,
 					}
+	settings.levelScore = {
+							0, 0, 0,
+							0, 0, 0,
+							0
+					      }
 
 	-- save data
 	util.save(settings, "settings.json")

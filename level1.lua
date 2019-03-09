@@ -11,16 +11,45 @@ local coinTable1 = {}
 local score = 0
 local scoreText
 local currentLevel = settings.currentLevel
+local highScore = settings.levelScore
+
+local coinSound = audio.loadSound("sound/coin.wav")
+lvl1Sound = audio.loadSound("sound/lvl1.wav")
 --------------------------------------------
 
-function buttonHit(event)
+function nextLevel(event)
+
+	if pauseSound.isVisible == true then
+		audio.play(tapSound)
+    end
 	settings.currentLevel = currentLevel+1
 	util.save(settings, "settings.json")
-	storyboard.removeScene( "level1" )
+	-- storyboard.removeScene( "level1" )
 	storyboard.purgeScene( "lvls" )
-	storyboard.gotoScene (  "lvls", {effect = "slideUp"} )
+	storyboard.gotoScene (  "lvls", {effect = "fade"} )
    
 	--return true
+end
+
+
+function onReplayBtnRelease(event)
+
+	if pauseSound.isVisible == true then
+		audio.play(tapSound)
+    end
+	storyboard.purgeScene( "rep1" )
+	storyboard.gotoScene (  "rep1", "fade", 500 )
+
+end
+
+function menuView(event)
+
+	if pauseSound.isVisible == true then
+		audio.play(tapSound)
+    end
+	storyboard.purgeScene( "lvls" )
+	storyboard.gotoScene (  "lvls", "fade", 500 )
+
 end
 
 local function unlockLevel()
@@ -29,23 +58,16 @@ local function unlockLevel()
 	if(currentLevel <= 1) then
 	  settings.levels[i] = 3
 	  settings.levels[i+1] = 1
+	  highScore[1] = score
 	  print( i )
   util.save(settings, "settings.json")
-  buttonHit()
+  nextLevel()
 	end
 
   end
 
 -- forward declarations and other locals
 local screenW, screenH, halfW = display.contentWidth, display.contentHeight, display.contentWidth*0.5
-
------------------------------------------------------------------------------------------
--- BEGINNING OF YOUR IMPLEMENTATION
--- 
--- NOTE: Code outside of listener functions (below) will only be executed once,
---		 unless storyboard.removeScene() is called.
--- 
------------------------------------------------------------------------------------------
 
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
@@ -72,19 +94,61 @@ function scene:createScene( event )
 	grcl1 = display.newImageRect( "im/ground_clouds.png", 480, 60 )
 	grcl1.x = 240
 	grcl1.y = 290
-	physics.addBody( grcl1, "static", { friction=0.1 } )
+	physics.addBody( grcl1, "static", { friction=100 } )
 
 	grcl2 = display.newImageRect( "im/ground_clouds.png", 480, 60 )
 	grcl2.x = bg1.width + 240
 	grcl2.y = 290
-	physics.addBody( grcl2, "static", { friction=0.1 } )
+	physics.addBody( grcl2, "static", { friction=100 } )
 
 	go = display.newImageRect("im/game_over.png", 140, 60)
 	go.x = -100
-	go.y = display.contentHeight /2
+	go.y = 90
 	go.alpha = 0
 	go.xScale = .5
 	go.yScale = .5
+	
+		replay = widget.newButton{
+		defaultFile="im/rep1.png",
+		overFile="im/rep2.png",
+		width=70, height=70,
+		onRelease = onReplayBtnRelease
+		}
+		replay.x = 180
+		replay.y = 180
+		replay.alpha = 0
+
+
+		menu = widget.newButton{
+		defaultFile="im/menu1.png",
+		overFile="im/menu2.png",
+		width=70, height=70,
+		onRelease = menuView
+		}
+		menu.x = 300
+		menu.y = 180
+		menu.alpha = 0
+
+		menu2 = widget.newButton{
+		defaultFile="im/menu1.png",
+		overFile="im/menu2.png",
+		width=70, height=70,
+		onRelease = menuView
+		}
+		menu2.x = display.contentWidth / 2
+		menu2.y = 180
+		menu2.alpha = 0
+
+
+		nextBtn = widget.newButton{
+		defaultFile="im/nl1.jpg",
+		overFile="im/nl2.jpg",
+		width=150, height=34,
+		onRelease = unlockLevel
+		}
+		nextBtn.x = display.contentWidth / 2
+		nextBtn.y = 180
+		nextBtn.alpha = 0
 
 	ws = display.newRect(240, 160, 480, 320)
 	ws:setFillColor(255)
@@ -99,15 +163,17 @@ function scene:createScene( event )
 	local sheet = graphics.newImageSheet("im/character.png", playoptions )
 
 	-- create sprite instance
-	local playshape1 = { -15,-20, 0,-40, 15,-30, 15,-20, 5,-10, 15,5, -10,5, -5,-10 }
-	local playshape2 = { 48,5, 50,30, 30,50, -30,50, -50,27, -50,10, -30,0, -5,0 }
+	local playshape1 = { -5,-10, -10,-10, -10,-40, 15,-40, 15,-10, 5,-10, 5,5, -5,5 }
+	local playshape2 = { 48,5, 48,30, 40,50, -40,50, -48,30, -48,5 }
+	-- local playshape1 = { -5,-10, -15,-20, 0,-40, 15,-30, 15,-20, 5,-10, 15,5, -10,5 }
+	-- local playshape2 = { 48,5, 50,30, 30,50, -30,50, -50,30, -50,8, -30,0, -5,3 }
 	instance = display.newSprite ( sheet, { name = "man", start = 1, count = 2, time = 800 } )
 	instance.x = 75
 	instance.y = 210
 	instance.objectType = "player"
 	physics.addBody( instance,
-	 { density=0.2, friction=5, shape=playshape1 },
-	 { density=2.2, friction=5, shape=playshape2 } 
+	 { density=0.2, friction=100, bounce=0, shape=playshape1 },
+	 { density=2.2, friction=100, bounce=0, shape=playshape2 } 
 	)
 
 	instance:play()
@@ -117,7 +183,7 @@ function scene:createScene( event )
 
 	-- create sprite instance
 	hole = display.newSprite ( holesheet, { name = "hole", start = 1, count = 3, time = 800 } )
-	hole.x = 375
+	hole.x = 600
 	hole.y = 230
 	hole.objectType = "buho"
 	-- local holeShape = { 5,-30, 12,-9, 13,4, 10,20, 5,30, -5,30, -10,20, -12,0 }
@@ -128,11 +194,25 @@ function scene:createScene( event )
 	hole:play()
 
 	gate1 = display.newImageRect("im/gate1.png", 198, 221)
-	gate1.x = 2000
+	gate1.x = 10000
 	gate1.y = display.contentHeight / 2
 	gate1.objectType = "gate1"
 	physics.addBody( gate1, "static", { density=1.2, friction=0, bounce=0 } )
 
+	star1 = display.newImageRect("im/star.png", 80, 80)
+	star1.x = display.contentWidth / 3
+	star1.y = 120
+	star1.alpha = 0
+
+	star2 = display.newImageRect("im/star.png", 80, 80)
+	star2.x = display.contentWidth / 2
+	star2.y = 100
+	star2.alpha = 0
+
+	star3 = display.newImageRect("im/star.png", 80, 80)
+	star3.x = (display.contentWidth / 2) + 80
+	star3.y = 120
+	star3.alpha = 0
 
 	-- physics.setDrawMode("hybrid")
 	physics.setGravity( 0, 17 )
@@ -147,14 +227,34 @@ function scene:createScene( event )
 	group:insert(instance)
 	group:insert(go)
 	group:insert(scoreText)
+	group:insert(replay)
+	group:insert(menu)
+	group:insert(menu2)
+	group:insert(nextBtn)
+	group:insert(star1)
+	group:insert(star2)
+	group:insert(star3)
 end
 
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
 	local group = self.view
+
+	if pauseSound.isVisible == true then
+		audio.play( lvl1Sound, { channel=1, loops=-1 } )
+	end
 	
 	physics.start()
 
+	function kulong( object )
+		if object.x < object.width - 30 then
+		object.x = object.width - 30
+	end
+	if object.x >  object.width then
+		object.x = object.width - 20
+	end
+	end
+	-- kulong(instance)
 
 	-- ##################__________jump kara it player_______##################
 	function jump(event)
@@ -178,6 +278,11 @@ function scene:enterScene( event )
 
 	Runtime:addEventListener("touch", jump)
 
+	function keepKulong()
+		kulong(instance)
+	end
+	Runtime:addEventListener("enterFrame", keepKulong)
+
 
 	-- ##################__________check if naka tugpa eon maw sa ground clouds__________##################
 	function checkGround()
@@ -194,8 +299,8 @@ function scene:enterScene( event )
 
 	-- ##################__________Animate background kara__________##################
 	local function gbAnim()
-		bg1.x = bg1.x - 5
-		bg2.x = bg2.x - 5
+		bg1.x = bg1.x - 3
+		bg2.x = bg2.x - 3
 		
 		if (bg1.x < -240) then
 			bg1.x = bg2.x + bg1.width
@@ -213,8 +318,8 @@ function scene:enterScene( event )
 
 	-- ##################__________Animate cloud ground kara__________##################
 	local function animateGrcl()
-		grcl1.x = grcl1.x - 10
-		grcl2.x = grcl2.x - 10
+		grcl1.x = grcl1.x - 4
+		grcl2.x = grcl2.x - 4
 		
 		if (grcl1.x < -240) then
 			grcl1.x = grcl2.x + grcl1.width
@@ -236,7 +341,7 @@ function scene:enterScene( event )
 		holeRandPos = math.random(450,1500)
 		holeRandNeg = math.random(0,500)
 
-		hole.x = hole.x - 7
+		hole.x = hole.x - 6
 		
 		if (hole.x <= -10) then
 			hole.x = holeRandPos * 2
@@ -251,6 +356,10 @@ function scene:enterScene( event )
 	function gateDestination()
 
 		gate1.x = gate1.x - 7
+
+		if (gate1.x == hole.x + 100) or (gate1.x == hole.x - 100) then
+			display.remove(hole)
+		end
 		
 	end
 	
@@ -264,7 +373,7 @@ function scene:enterScene( event )
 		coin.isBullet = true
 		coin.objectType = "coin"
 		coin.x = -100
-		physics.alpha = 0
+		coin.alpha = 0
 
 
 		local coin2 = display.newImageRect("im/coin.png", 30, 30)
@@ -273,7 +382,7 @@ function scene:enterScene( event )
 		coin2.isBullet = true
 		coin2.objectType = "coin2"
 		coin2.x = -100
-		physics.alpha = 0
+		coin2.alpha = 0
 
 
 		local coin3 = display.newImageRect("im/coin.png", 30, 30)
@@ -282,12 +391,12 @@ function scene:enterScene( event )
 		coin3.isBullet = true
 		coin3.objectType = "coin3"
 		coin3.x = -100
-		physics.alpha = 0
+		coin3.alpha = 0
 
 		local saya = math.random( 3 )
-		coinRanY = math.random(50,90)
+		coinRanY = math.random(80,100)
 		coinRanY2 = math.random(70,150)
-		coinRanX = math.random(1500,2500)
+		coinRanX = math.random(2500,3000)
 
 		if ( saya == 1 ) then
 		
@@ -296,7 +405,6 @@ function scene:enterScene( event )
 			transition.to( coin, { x=-140, time=coinRanX,
 			onComplete = function() display.remove( coin ) end
 		} )
-			-- coin:setLinearVelocity( math.random( 40,120 ), math.random( 20,60 ) )
 			coin.alpha = 1
 
 			print("coint1")
@@ -308,10 +416,7 @@ function scene:enterScene( event )
 			transition.to( coin2, { x=-140, time=coinRanX,
 			onComplete = function() display.remove( coin2 ) end
 		} )
-			-- coin2:setLinearVelocity( math.random( -40,40 ), math.random( 40,120 ) )
 			coin2.alpha = 1
-
-			print("coint2")
 	
 		elseif ( saya == 3 ) then
 			
@@ -320,7 +425,6 @@ function scene:enterScene( event )
 			transition.to( coin3, { x=-140, time=coinRanX,
 			onComplete = function() display.remove( coin3 ) end
 		} )
-			-- coin3:setLinearVelocity( math.random( -120,-40 ), math.random( 20,60 ) )
 			coin3.alpha = 1
 
 			print("coint3")
@@ -346,6 +450,11 @@ function scene:enterScene( event )
 				 ( obj1.objectType == "buho" and obj2.objectType == "player" ) )
 			then
 				
+				if pauseSound.isVisible == true then
+					audio.pause(lvl1Sound)
+					audio.play(lose)
+				end
+
 				function ws2()
 					ws1 = transition.to( ws, {alpha = 0, time=250})
 				end
@@ -353,11 +462,6 @@ function scene:enterScene( event )
 
 				display.remove( obj1 )
 				display.remove( obj2 )
-				-- physics.stop()
-				-- stopTime = timer.cancel(coinLoop)
-				-- timer1 = timer.performWithDelay( 2000, listener )  -- wait 2 seconds
- 
-				-- sometime later...
 				local result = timer.cancel( coinLoopTimer )
 				Runtime:removeEventListener("enterFrame", gbAnim)
 				Runtime:removeEventListener("enterFrame", animateGrcl)
@@ -365,14 +469,16 @@ function scene:enterScene( event )
 				Runtime:removeEventListener("enterFrame", holeX)
 				Runtime:removeEventListener("touch", jump)
 				Runtime:removeEventListener("enterFrame", gateDestination)
-				-- print("bunggo buho")
+				Runtime:removeEventListener("enterFrame", keepKulong)
 
-			-- function gameOver()
+
+			function backAndReplay()
+				showBack = transition.to( replay, { alpha=1, time=1000, delay=200} )
+				showReplay = transition.to( menu, { alpha=1, time=1000, delay=200} )
+			end
+
 			function scaleUp()
-
-				gameOv2 = transition.to( go, { xScale = 1.5, yScale = 1.5, time=500, delay=200 } )
-				
-
+				gameOv2 = transition.to( go, { xScale = 1.5, yScale = 1.5, time=500, delay=200, onComplete=backAndReplay } )
 			end
 
 			gameOv1 = transition.to( go, { transition = easing.inExpo, x = display.contentWidth /2, alpha=1, time=1000, onComplete=scaleUp} )
@@ -383,29 +489,31 @@ function scene:enterScene( event )
 			then
 
 				display.remove( obj2 )
-				-- display.remove( obj2 )
 				for i = #coinTable1, 1, -1 do
 					if ( coinTable1[i] == obj1 or coinTable1[i] == obj2 ) then
 						table.remove( coinTable1, i)
+						if pauseSound.isVisible == true then
+							audio.play(coinSound)
+						end
 						score = score + 10
 						scoreText.text = score
-						print("bunggo Coin1")
 						break
 					end
 				end
-
-			-- end
 
 
 		elseif ( ( obj1.objectType == "player" and obj2.objectType == "coin2" ) or
 					 ( obj1.objectType == "coin2" and obj2.objectType == "player" ) )
 			then
 
+				
 				display.remove( obj2 )
-				-- display.remove( obj2 )
 				for i = #coinTable1, 1, -1 do
 					if ( coinTable1[i] == obj1 or coinTable1[i] == obj2 ) then
 						table.remove( coinTable1, i)
+						if pauseSound.isVisible == true then
+							audio.play(coinSound)
+						end
 						score = score + 15
 						scoreText.text = score
 						print("bunggo Coin2")
@@ -418,11 +526,14 @@ function scene:enterScene( event )
 					 ( obj1.objectType == "coin3" and obj2.objectType == "player" ) )
 			then
 
+				
 				display.remove( obj2 )
-				-- display.remove( obj2 )
 				for i = #coinTable1, 1, -1 do
 					if ( coinTable1[i] == obj1 or coinTable1[i] == obj2 ) then
 						table.remove( coinTable1, i)
+						if pauseSound.isVisible == true then
+							audio.play(coinSound)
+						end
 						score = score + 20
 						scoreText.text = score
 						print("bunggo Coin3")
@@ -442,10 +553,6 @@ function scene:enterScene( event )
 
 				removeBody = timer.performWithDelay(500, removePhysicsBody) 
 
-				-- display.remove( obj2 )
-				-- display.remove( obj2 )
-				-- instance:pause()
-				-- physics.addBody( instance, "static")
 				local result = timer.cancel( coinLoopTimer )
 				Runtime:removeEventListener("enterFrame", gbAnim)
 				Runtime:removeEventListener("enterFrame", animateGrcl)
@@ -455,8 +562,141 @@ function scene:enterScene( event )
 				Runtime:removeEventListener("enterFrame", gateDestination)
 
 
+				function checkNextButton()
+
+					if(currentLevel <= 1) then
+
+							tweenNextBtn = transition.to( nextBtn, { alpha=1, delay=200} )
+							
+							local function nextBtnAnimation( )
+								local nBtnscaleUp = function( )
+									nextBtnTween = transition.to( nextBtn, { xScale=1.3, yScale=1.3, time=800, onComplete=nextBtnAnimation } )
+								end
+								nextBtnTween1 = transition.to( nextBtn, { xScale=1, yScale=1, time=800, onComplete=nBtnscaleUp } )
+							end
+							nextBtnAnimation()
+
+							if (score > highScore[1]) then
+								if (score >= 400 and score < 800) then
+									function star1ReturnScale()
+										star1Visible2 = transition.to( star1, { transition=easing.inExpo, xScale=1, yScale=1} )
+									end
+								star1Visible = transition.to( star1, { transition=easing.inExpo, xScale=3, yScale=3, alpha=1, onComplete=star1ReturnScale} )
+								
+								if pauseSound.isVisible == true then
+									audio.play(getStar)
+								end
+						
+								elseif (score >= 800 and score < 1200) then
+									function star1ReturnScale()
+										star1Visible2 = transition.to( star1, { transition=easing.inExpo, xScale=1, yScale=1} )
+									end
+								star1Visible = transition.to( star1, { transition=easing.inExpo, xScale=3, yScale=3, alpha=1, onComplete=star1ReturnScale} )
+						
+									function star2ReturnScale()
+										star2Visible2 = transition.to( star2, { transition=easing.inExpo, xScale=1, yScale=1} )
+									end
+								star2Visible = transition.to( star2, { transition=easing.inExpo, xScale=3, yScale=3, alpha=1, delay=300, onComplete=star2ReturnScale} )
+								
+								if pauseSound.isVisible == true then
+									audio.play(getStar)
+								end
+								
+							
+								elseif (score >= 1200) then
+									function star1ReturnScale()
+										star1Visible2 = transition.to( star1, { transition=easing.inExpo, xScale=1, yScale=1} )
+									end
+								star1Visible = transition.to( star1, { transition=easing.inExpo, xScale=3, yScale=3, alpha=1, onComplete=star1ReturnScale} )
+						
+									function star2ReturnScale()
+										star2Visible2 = transition.to( star2, { transition=easing.inExpo, xScale=1, yScale=1} )
+									end
+								star2Visible = transition.to( star2, { transition=easing.inExpo, xScale=3, yScale=3, alpha=1, delay=300, onComplete=star2ReturnScale} )
+									
+									function star3ReturnScale()
+										star3Visible2 = transition.to( star3, { transition=easing.inExpo, xScale=1, yScale=1} )
+									end
+								star3Visible = transition.to( star3, { transition=easing.inExpo, xScale=3, yScale=3, alpha=1, delay=600, onComplete=star3ReturnScale} )
+								
+								if pauseSound.isVisible == true then
+									audio.play(getStar)
+								end
+								
+								
+								end
+								end
+							
+						else
+							
+							if (score > highScore[1]) then
+							if (score >= 400 and score < 800) then
+								function star1ReturnScale()
+									star1Visible2 = transition.to( star1, { transition=easing.inExpo, xScale=1, yScale=1} )
+								end
+							star1Visible = transition.to( star1, { transition=easing.inExpo, xScale=3, yScale=3, alpha=1, onComplete=star1ReturnScale} )
+							
+							if pauseSound.isVisible == true then
+								audio.play(getStar)
+							end
+
+							highScore[1] = score
+							util.save(settings, "settings.json")
+							
+
+							elseif (score >= 800 and score < 1200) then
+								function star1ReturnScale()
+									star1Visible2 = transition.to( star1, { transition=easing.inExpo, xScale=1, yScale=1} )
+								end
+							star1Visible = transition.to( star1, { transition=easing.inExpo, xScale=3, yScale=3, alpha=1, onComplete=star1ReturnScale} )
+
+								function star2ReturnScale()
+									star2Visible2 = transition.to( star2, { transition=easing.inExpo, xScale=1, yScale=1} )
+								end
+							star2Visible = transition.to( star2, { transition=easing.inExpo, xScale=3, yScale=3, alpha=1, delay=300, onComplete=star2ReturnScale} )
+							
+							if pauseSound.isVisible == true then
+								audio.play(getStar)
+							end
+
+							highScore[1] = score
+							util.save(settings, "settings.json")
+						
+							elseif (score >= 1200) then
+								function star1ReturnScale()
+									star1Visible2 = transition.to( star1, { transition=easing.inExpo, xScale=1, yScale=1} )
+								end
+							star1Visible = transition.to( star1, { transition=easing.inExpo, xScale=3, yScale=3, alpha=1, onComplete=star1ReturnScale} )
+
+								function star2ReturnScale()
+									star2Visible2 = transition.to( star2, { transition=easing.inExpo, xScale=1, yScale=1} )
+								end
+							star2Visible = transition.to( star2, { transition=easing.inExpo, xScale=3, yScale=3, alpha=1, delay=300, onComplete=star2ReturnScale} )
+								
+								function star3ReturnScale()
+									star3Visible2 = transition.to( star3, { transition=easing.inExpo, xScale=1, yScale=1} )
+								end
+							star3Visible = transition.to( star3, { transition=easing.inExpo, xScale=3, yScale=3, alpha=1, delay=600, onComplete=star3ReturnScale} )
+							
+							if pauseSound.isVisible == true then
+								audio.play(getStar)
+							end
+							
+							highScore[1] = score
+							util.save(settings, "settings.json")
+							
+							end
+							end
+							menuButton = transition.to( menu2, { alpha=1, delay=200} )
+							
+					end
+				end
+
+
+				
+
 				function enterRainbow()
-					enters = transition.to(gate1,{xScale=5, yScale=5, alpha=0, time=1000})
+					enters = transition.to(gate1,{xScale=5, yScale=5, alpha=0, time=1000, onComplete=checkNextButton})
 				end
 				sakaGate1 = transition.to(instance,{x=200,y=150,alpha=0, time=1000, delay=500, onComplete=enterRainbow})
 
@@ -468,13 +708,7 @@ function scene:enterScene( event )
 		end
 	end
 	
-	Runtime:addEventListener( "collision", onCollision )	
-
-	-- function clickGameOver()
-	-- 	unlockLevel()
-	-- end
-
-	-- go:addEventListener("tap", clickGameOver)
+	Runtime:addEventListener( "collision", onCollision )
 
 
 	group:insert(bg1)
@@ -487,6 +721,13 @@ function scene:enterScene( event )
 	group:insert(instance)
 	group:insert(go)
 	group:insert(scoreText)
+	group:insert(replay)
+	group:insert(menu)
+	group:insert(menu2)
+	group:insert(nextBtn)
+	group:insert(star1)
+	group:insert(star2)
+	group:insert(star3)
 	
 end
 
@@ -495,33 +736,23 @@ function scene:exitScene( event )
 	local group = self.view
 	
 	physics.stop()
+	audio.stop(1)
 	
 end
 
 -- If scene's view is removed, scene:destroyScene() will be called just prior to:
 function scene:destroyScene( event )
 	local group = self.view
-	
-	-- package.loaded[physics] = nil
-	-- physics = nil
+	audio.dispose(lvl1Sound)
+	replay = nil
+	menu = nil
+	menu2 = nil
+	nextBtn = nil
 end
 
------------------------------------------------------------------------------------------
--- END OF YOUR IMPLEMENTATION
------------------------------------------------------------------------------------------
-
--- "createScene" event is dispatched if scene's view does not exist
 scene:addEventListener( "createScene", scene )
-
--- "enterScene" event is dispatched whenever scene transition has finished
-scene:addEventListener( "enterScene", scene )
-
--- "exitScene" event is dispatched whenever before next scene's transition begins
+scene:addEventListener( "enterScene", scene )-- "exitScene" event is dispatched whenever before next scene's transition begins
 scene:addEventListener( "exitScene", scene )
-
--- "destroyScene" event is dispatched before view is unloaded, which can be
--- automatically unloaded in low memory situations, or explicitly via a call to
--- storyboard.purgeScene() or storyboard.removeScene().
 scene:addEventListener( "destroyScene", scene )
 
 -----------------------------------------------------------------------------------------
