@@ -157,10 +157,9 @@ function scene:enterScene( event )
 	end
 
 	function goCirc(event)
-			
-	physics.start()
+		
 
-	randWH = math.random(10,30)
+	randWH = math.random(0,30)
 		
 	if event.phase == "began"  then
 	cout = 1
@@ -170,8 +169,10 @@ function scene:enterScene( event )
 	circ = display.newImageRect( "im/cloud.png", randWH, randWH)
 	circ.x = event.x
 	circ.y = event.y
-	physics.addBody( circ, { density=0, bounce=0.3, radius=10 } )
+	randX = math.random(0,600)
+	-- physics.addBody( circ, { density=0, bounce=0.3, radius=10 } )
 
+	goTrans3 = transition.to (circ, {alpha=0, x=randX, time=2000})
 	goTrans1 = transition.to (circ, {alpha=0, y=10, time=3000})
 	group:insert( circ )
 	
@@ -183,9 +184,8 @@ function scene:enterScene( event )
 	end 
 
 		function goCirc2(event)
-
-		physics.start()
-		randWH2 = math.random(20,40)
+			
+		randWH2 = math.random(0,40)
 
 		if event.phase == "began"  then
 		cout2 = 1
@@ -195,8 +195,10 @@ function scene:enterScene( event )
 		circ2 = display.newImageRect( "im/cloud.png", randWH2, randWH2)
 		circ2.x = event.x
 		circ2.y = event.y
-		physics.addBody( circ2, { density=0, bounce=0.3, radius=4 } )
+		randX1 = math.random(0,600)
+		-- physics.addBody( circ2, { density=0, bounce=0.3, radius=4 } )
 		
+		goTrans4 = transition.to (circ2, {alpha=0, x=randX1, time=2000})
 		goTrans2 = transition.to (circ2, {alpha=0, y=10, time=3000})
 		group:insert( circ2 )
 		end

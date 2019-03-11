@@ -662,6 +662,9 @@ function scene:enterScene( event )
 					 ( obj1.objectType == "gate1" and obj2.objectType == "player" ) )
 			then
 
+				if pauseSound.isVisible == true then
+					audio.pause(lvl4Sound)
+				end
 				function removePhysicsBody()
 				physics.removeBody(gate1)
 				physics.removeBody(instance)
